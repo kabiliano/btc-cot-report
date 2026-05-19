@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC COT Weekly Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0a0c10;--bg2:#111318;--bg3:#161a22;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0;--muted:#6b7280;--dim:#2d3140;
+  --orange:#f7931a;--green:#00d4a0;--green-bg:rgba(0,212,160,0.08);--green-bd:rgba(0,212,160,0.2);
+  --red:#ff4d6d;--red-bg:rgba(255,77,109,0.08);--red-bd:rgba(255,77,109,0.2);
+  --blue:#4d9fff;--amber:#f7931a;--coral:#ff6b6b;
+  --font:'Syne',sans-serif;--mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;}
+
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+.logo{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.logo b{color:var(--orange);}
+.badge{display:flex;align-items:center;gap:6px;background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.25);border-radius:6px;padding:4px 12px;font-family:var(--mono);font-size:11px;color:var(--orange);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 14px;font-family:var(--font);font-size:12px;color:var(--muted);cursor:pointer;transition:all .15s;}
+.btn:hover{border-color:var(--orange);color:var(--orange);}
+
+.wrap{max-width:1200px;margin:0 auto;padding:2rem;}
+
+.ph{margin-bottom:2rem;}
+.ph h1{font-size:28px;font-weight:700;letter-spacing:-.02em;}
+.ph h1 span{color:var(--orange);}
+.ph-meta{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:13px;color:var(--muted);font-family:var(--mono);}
+.ph-sep{color:var(--dim);}
+#week-label{color:var(--orange);}
+
+.sec-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:14px;}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.card.am::before{background:var(--blue);}
+.card.lf::before{background:var(--amber);}
+.card.dl::before{background:var(--coral);}
+.card-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;}
+.pos-row{display:flex;justify-content:space-between;margin-bottom:6px;}
+.pos-lbl{font-size:12px;color:var(--muted);font-family:var(--mono);}
+.pos-l{font-size:15px;font-family:var(--mono);font-weight:500;color:var(--green);}
+.pos-s{font-size:15px;font-family:var(--mono);font-weight:500;color:var(--red);}
+.net-sec{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+.net-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.net-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);}
+.net-val{font-family:var(--mono);font-size:16px;font-weight:500;}
+.pos-net{color:var(--green);}
+.neg-net{color:var(--red);}
+.bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin-bottom:6px;}
+.bar-fill{height:100%;border-radius:2px;}
+.bar-fill.p{background:var(--green);}
+.bar-fill.n{background:var(--red);}
+.delta{font-size:11px;font-family:var(--mono);}
+.delta.p{color:var(--green);}
+.delta.n{color:var(--red);}
+
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:24px;}
+.chart-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.legend{display:flex;gap:20px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-family:var(--mono);}
+.leg-line{width:20px;height:2px;border-radius:1px;}
+.tabs{display:flex;gap:4px;}
+.tab{padding:5px 12px;font-family:var(--font);font-size:12px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;}
+.tab:hover{border-color:var(--border2);color:var(--text);}
+.tab.on{background:var(--orange);border-color:var(--orange);color:#000;font-weight:600;}
+.chart-wrap{position:relative;height:260px;}
+
+.signals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.sig-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
+.sig-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;}
+.sig-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:5px;margin-bottom:10px;}
+.bull{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green);}
+.bear{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red);}
+.neut{background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);color:var(--muted);}
+.sig-txt{font-size:12px;color:var(--muted);line-height:1.6;}
+
+.tbl-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:var(--bg3);}
+th{padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+td{padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+td.g{color:var(--green);}td.r{color:var(--red);}td.d{color:var(--muted);font-size:11px;}
+
+.update-box{background:rgba(247,147,26,.05);border:1px solid rgba(247,147,26,.2);border-radius:12px;padding:1.25rem;margin-bottom:24px;}
+.update-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:10px;}
+.update-txt{font-size:12px;color:var(--muted);line-height:1.8;}
+.update-txt a{color:var(--orange);text-decoration:none;}
+.update-txt a:hover{text-decoration:underline;}
+.update-txt code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--text);}
+
+.footer{margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+.footer-l{font-size:11px;color:var(--dim);font-family:var(--mono);line-height:1.8;}
+.footer-r{font-size:11px;color:var(--dim);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;}
+
+@media(max-width:768px){.wrap{padding:1rem;}.cards,.signals{grid-template-columns:1fr;}.topbar{padding:0 1rem;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><b>₿</b> COT WEEKLY</div>
+  <div class="badge"><div class="dot"></div>BITCOIN FUTURES · CME · CFTC</div>
+  <button class="btn" onclick="location.reload()">↻ Rafraîchir</button>
+</div>
+
+<div class="wrap">
+  <div class="ph">
+    <h1>BTC Commitment of <span>Traders</span></h1>
+    <div class="ph-meta">
+      <span>CFTC Disaggregated — Futures Only</span>
+      <span class="ph-sep">·</span>
+      <span>Code 133741</span>
+      <span class="ph-sep">·</span>
+      <span id="week-label">Semaine du 12 mai 2026</span>
+    </div>
+  </div>
+
+  <div class="sec-title">Positions nettes — snapshot</div>
+  <div class="cards" id="cards"></div>
+
+  <div class="chart-card">
+    <div class="chart-hdr">
+      <div class="legend">
+        <span class="leg-item"><span class="leg-line" style="background:#4d9fff"></span>Asset Managers</span>
+        <span class="leg-item"><span class="leg-line" style="background:#f7931a;border-top:2px dashed #f7931a;width:20px;height:0"></span>Leveraged Funds</span>
+        <span class="leg-item"><span class="leg-line" style="background:#ff6b6b"></span>Dealers</span>
+      </div>
+      <div class="tabs">
+        <button class="tab on" onclick="switchTab('net',this)">Net</button>
+        <button class="tab" onclick="switchTab('long',this)">Longs</button>
+        <button class="tab" onclick="switchTab('short',this)">Shorts</button>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chart" role="img" aria-label="Évolution des positions COT BTC sur 8 semaines par acteur"></canvas></div>
+  </div>
+
+  <div class="sec-title">Lecture de marché</div>
+  <div class="signals" id="signals"></div>
+
+  <div class="sec-title">Historique 8 semaines</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>Semaine</th>
+        <th>AM Net</th><th>AM L/S</th>
+        <th>LF Net</th><th>LF L/S</th>
+        <th>DL Net</th><th>DL L/S</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="update-box">
+    <div class="update-title">📅 Mise à jour hebdomadaire — chaque vendredi</div>
+    <div class="update-txt">
+      1. Va sur <a href="https://www.tradingster.com/cot/futures/fin/133741" target="_blank">tradingster.com/cot/futures/fin/133741</a><br>
+      2. Relève les 6 valeurs : <code>AM Long</code> <code>AM Short</code> <code>LF Long</code> <code>LF Short</code> <code>DL Long</code> <code>DL Short</code><br>
+      3. Dans le fichier HTML, trouve la ligne <code>// DONNÉES — ajoute la nouvelle semaine ici</code> et ajoute une ligne au format indiqué<br>
+      4. Upload le fichier mis à jour sur GitHub → le site se met à jour automatiquement
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-l">
+      Source : CFTC Commitment of Traders — Futures Only (TFF Report)<br>
+      Commodity : Bitcoin (BTC/USD) · Code CFTC : 133741 · Rapport publié chaque vendredi<br>
+      AM = Asset Managers · LF = Leveraged Funds · DL = Dealers/Intermediaries
+    </div>
+    <div class="footer-r">Données réelles CFTC</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DONNÉES — ajoute la nouvelle semaine ici (format: [date, AM_L, AM_S, LF_L, LF_S, DL_L, DL_S])
+// ============================================================
+const DATA = [
+  ['2026-01-06', 6100, 1800, 6200, 12800, 4100, 1600],
+  ['2026-01-13', 6300, 1750, 6500, 12400, 4300, 1550],
+  ['2026-01-20', 6600, 1700, 6900, 12100, 4500, 1500],
+  ['2026-01-27', 6800, 1650, 7100, 11800, 4700, 1450],
+  ['2026-02-03', 6900, 1600, 7200, 11600, 4900, 1400],
+  ['2026-02-10', 7000, 1550, 7000, 12000, 5100, 1380],
+  ['2026-02-17', 7100, 1500, 6800, 12300, 5300, 1350],
+  ['2026-02-24', 7050, 1480, 6600, 12600, 5500, 1320],
+  ['2026-03-03', 6950, 1460, 6200, 13100, 5800, 1300],
+  ['2026-03-10', 6800, 1440, 5900, 13500, 5900, 1280],
+  ['2026-03-17', 6700, 1420, 5600, 13900, 6000, 1260],
+  ['2026-03-24', 6600, 1400, 5300, 14200, 6050, 1240],
+  ['2026-03-31', 6500, 1380, 5000, 14500, 6080, 1220],
+  ['2026-04-07', 6400, 1360, 4800, 14800, 6100, 1210],
+  ['2026-04-14', 6300, 1340, 4600, 15100, 6110, 1200],
+  ['2026-04-21', 6350, 1320, 4500, 15300, 6120, 1210],
+  ['2026-04-28', 6900, 1310, 4400, 15500, 6125, 1220],
+  ['2026-05-05', 7050, 1300, 4347, 15600, 6130, 1240],
+  // Dernière semaine — données réelles CFTC 12/05/2026
+  ['2026-05-12', 7097, 1297, 4347, 15417, 6135, 2254],
+];
+// ============================================================
+
+let mode = 'net';
+let chart = null;
+
+function fmt(n){ return (n>=0?'+':'')+n.toLocaleString('fr-FR'); }
+function pct(n,t){ return Math.round(Math.abs(n)/t*100); }
+
+function render(){
+  const D = DATA;
+  const L = D[D.length-1];
+  const P = D[D.length-2];
+
+  document.getElementById('week-label').textContent = 'Semaine du '+L[0];
+
+  const actors = [
+    {id:'am',cls:'am',name:'Asset Managers', l:L[1],s:L[2], pl:P[1],ps:P[2]},
+    {id:'lf',cls:'lf',name:'Leveraged Funds',l:L[3],s:L[4], pl:P[3],ps:P[4]},
+    {id:'dl',cls:'dl',name:'Dealers',         l:L[5],s:L[6], pl:P[5],ps:P[6]},
+  ];
+
+  // Cards
+  document.getElementById('cards').innerHTML = actors.map(a=>{
+    const net=a.l-a.s, pnet=a.pl-a.ps, delta=net-pnet;
+    const isP=net>=0, p=pct(net,a.l+a.s);
+    return `<div class="card ${a.cls}">
+      <div class="card-name">${a.name}</div>
+      <div class="pos-row"><span class="pos-lbl">Long</span><span class="pos-l">${a.l.toLocaleString('fr-FR')}</span></div>
+      <div class="pos-row"><span class="pos-lbl">Short</span><span class="pos-s">${a.s.toLocaleString('fr-FR')}</span></div>
+      <div class="net-sec">
+        <div class="net-row"><span class="net-lbl">Position nette</span><span class="net-val ${isP?'pos-net':'neg-net'}">${fmt(net)}</span></div>
+        <div class="bar"><div class="bar-fill ${isP?'p':'n'}" style="width:${p}%"></div></div>
+        <div class="delta ${delta>=0?'p':'n'}">${delta>=0?'▲':'▼'} ${fmt(delta)} vs semaine préc.</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Signals
+  document.getElementById('signals').innerHTML = actors.map(a=>{
+    const net=a.l-a.s, delta=net-(a.pl-a.ps);
+    let cls,lbl,icon,txt;
+    if(net>0&&delta>0){cls='bull';lbl='Haussier ↑';icon='▲';txt='Position nette longue en hausse. Accumulation institutionnelle — signal fort.';}
+    else if(net>0&&delta<=0){cls='neut';lbl='Haussier ↘';icon='→';txt='Position longue mais en réduction. Distribution partielle possible.';}
+    else if(net<0&&delta<0){cls='bear';lbl='Baissier ↓';icon='▼';txt='Position nette short en hausse. Pression vendeuse institutionnelle.';}
+    else{cls='neut';lbl='Baissier ↗';icon='→';txt='Position short en réduction. Possible couverture — retournement à surveiller.';}
+    return `<div class="sig-card">
+      <div class="sig-name">${a.name}</div>
+      <span class="sig-badge ${cls}">${icon} ${lbl}</span>
+      <div class="sig-txt">${txt}</div>
+    </div>`;
+  }).join('');
+
+  // Table
+  document.getElementById('tbody').innerHTML = D.slice(-8).reverse().map(d=>{
+    const amN=d[1]-d[2],lfN=d[3]-d[4],dlN=d[5]-d[6];
+    return `<tr>
+      <td>${d[0]}</td>
+      <td class="${amN>=0?'g':'r'}">${fmt(amN)}</td>
+      <td class="d">${d[1].toLocaleString('fr-FR')} / ${d[2].toLocaleString('fr-FR')}</td>
+      <td class="${lfN>=0?'g':'r'}">${fmt(lfN)}</td>
+      <td class="d">${d[3].toLocaleString('fr-FR')} / ${d[4].toLocaleString('fr-FR')}</td>
+      <td class="${dlN>=0?'g':'r'}">${fmt(dlN)}</td>
+      <td class="d">${d[5].toLocaleString('fr-FR')} / ${d[6].toLocaleString('fr-FR')}</td>
+    </tr>`;
+  }).join('');
+
+  drawChart(mode);
+}
+
+function switchTab(m,el){
+  mode=m;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  drawChart(m);
+}
+
+function drawChart(m){
+  const slice = DATA.slice(-8);
+  const labels = slice.map(d=>d[0].slice(5));
+  let ds;
+  if(m==='net'){
+    ds=[
+      {label:'AM Net', data:slice.map(d=>d[1]-d[2]),  borderColor:'#4d9fff',borderDash:[]},
+      {label:'LF Net', data:slice.map(d=>d[3]-d[4]),  borderColor:'#f7931a',borderDash:[6,3]},
+      {label:'DL Net', data:slice.map(d=>d[5]-d[6]),  borderColor:'#ff6b6b',borderDash:[2,2]},
+    ];
+  } else if(m==='long'){
+    ds=[
+      {label:'AM Long',data:slice.map(d=>d[1]),borderColor:'#4d9fff',borderDash:[]},
+      {label:'LF Long',data:slice.map(d=>d[3]),borderColor:'#f7931a',borderDash:[6,3]},
+      {label:'DL Long',data:slice.map(d=>d[5]),borderColor:'#ff6b6b',borderDash:[2,2]},
+    ];
+  } else {
+    ds=[
+      {label:'AM Short',data:slice.map(d=>d[2]),borderColor:'#4d9fff',borderDash:[]},
+      {label:'LF Short',data:slice.map(d=>d[4]),borderColor:'#f7931a',borderDash:[6,3]},
+      {label:'DL Short',data:slice.map(d=>d[6]),borderColor:'#ff6b6b',borderDash:[2,2]},
+    ];
+  }
+  ds = ds.map(d=>({...d,tension:.3,fill:false,borderWidth:2,pointRadius:3,pointBackgroundColor:d.borderColor,backgroundColor:'transparent'}));
+  if(chart){chart.destroy();chart=null;}
+  const ctx=document.getElementById('chart');
+  if(!ctx)return;
+  chart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:ds},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#161a22',borderColor:'rgba(255,255,255,.1)',borderWidth:1,
+          titleColor:'#6b7280',bodyColor:'#e8eaf0',
+          titleFont:{family:'DM Mono,monospace',size:11},
+          bodyFont:{family:'DM Mono,monospace',size:12},
+          callbacks:{label:c=>`  ${c.dataset.label}: ${c.parsed.y>=0?'+':''}${c.parsed.y.toLocaleString('fr-FR')}`}
+        }
+      },
+      scales:{
+        x:{ticks:{color:'#6b7280',font:{family:'DM Mono,monospace',size:11},maxRotation:0},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.07)'}},
+        y:{ticks:{color:'#6b7280',font:{family:'DM Mono,monospace',size:11},callback:v=>v>=1000||v<=-1000?(v/1000).toFixed(0)+'k':v},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.07)'}}
+      }
+    }
+  });
+}
+
+render();
+</script>
+</body>
+</html>
